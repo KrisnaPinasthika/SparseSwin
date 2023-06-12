@@ -1,1 +1,1 @@
-This folder contains ImageNet100, CIFAR10, and CIFAR100
+This folder contains ImageNet100, CIFAR10, and CIFAR100 datasets
