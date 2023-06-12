@@ -1,4 +1,4 @@
-# SparseSwin
+# SparseSwin n[anti dahpus dulu]
 ---
 This repo is the official implementation of "SparseSwin: Swin Transformer with Sparse Transformer Block"
 
