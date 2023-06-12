@@ -8,8 +8,8 @@ Advancements in computer vision research have put the transformer architecture a
 The proposed SparseSwin model outperforms other state-of-the-art models in image classification with an accuracy of 86.90%, 97.43%, and 85.35% on the ImageNet100, CIFAR10, and CIFAR100 datasets respectively, despite its fewer number of parameters. This result highlights the potential of a transformer architecture using a sparse token converter with a limited number of tokens to optimize the use of the transformer and improve its performance. 
 
 ## Architecture
-<p align="center" ><img src="https://media.discordapp.net/attachments/449985531372240908/1117657023056728194/sparseswin.png?width=1440&height=288" width="768"/> </p>
-<p align="center" ><img src="https://media.discordapp.net/attachments/449985531372240908/1117657023287410738/sparta_block.png?width=1163&height=662" width="768"/> </p>
+<p align="center" ><img src="https://media.discordapp.net/attachments/449985531372240908/1117781575568986138/Screenshot_3.png?width=933&height=237" width="768"/> </p>
+<p align="center" ><img src="https://media.discordapp.net/attachments/449985531372240908/1117781575325724702/Screenshot_2.png?width=928&height=606" width="768"/> </p>
 
 # Results on ImageNet100, CIFAR10, and CIFAR100
 <p align="center" ><img src="https://cdn.discordapp.com/attachments/449985531372240908/1117781192956182538/table.png" width="768"/> </p>
