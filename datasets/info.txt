@@ -1,0 +1,1 @@
+This folder contains ImageNet100, CIFAR10, and CIFAR100
