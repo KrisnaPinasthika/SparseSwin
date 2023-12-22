@@ -31,7 +31,6 @@ class SparseToken(nn.Module):
             latent_token : B, ltoken_num, ltoken_dim
         """
         x = x.permute(0, 3, 1, 2) # B, C, H, W
-        b, c, h, w = x.shape
         
         sparse_token = self.convert(x)                        # B, ltoken_dim, H, W
         sparse_token = sparse_token.flatten(start_dim=2)      # B, ltoken_dim, H*W
@@ -68,38 +67,40 @@ class SparseTransformerBlock(nn.Module):
         super(SparseTransformerBlock, self).__init__()
         self.lf = lf
         self.convert_token = SparseToken(
-            in_channels=c_dim, 
-            hw_size=hw_size,
-            ltoken_num=ltoken_num, 
-            ltoken_dim=ltoken_dim, 
-            device=device
-        )
+                                in_channels=c_dim, 
+                                hw_size=hw_size,
+                                ltoken_num=ltoken_num, 
+                                ltoken_dim=ltoken_dim, 
+                                device=device
+                            )
         
         self.mha = nn.ModuleList([
-            MultiheadAttention(
-                embed_dim=ltoken_dim, 
-                num_heads=num_heads, 
-                qkv_bias=qkv_bias, 
-                attn_drop_prob=attn_drop_prob, 
-                lin_drop_prob=lin_drop_prob, 
-            ) for _ in range(lf)
-        ])
+                        MultiheadAttention(
+                            embed_dim=ltoken_dim, 
+                            num_heads=num_heads, 
+                            qkv_bias=qkv_bias, 
+                            attn_drop_prob=attn_drop_prob, 
+                            lin_drop_prob=lin_drop_prob,) 
+                        for _ in range(lf)
+                    ])
         
         self.mlp = nn.ModuleList([
-            MLP(
-                in_features=ltoken_dim, 
-                hidden_features=int(ltoken_dim*hidden_features), 
-                out_features=ltoken_dim, 
-                drop_prob=attn_drop_prob
-            ) for _ in range(lf)
-        ])
+                        MLP(
+                            in_features=ltoken_dim, 
+                            hidden_features=int(ltoken_dim*hidden_features), 
+                            out_features=ltoken_dim, 
+                            drop_prob=attn_drop_prob) 
+                        for _ in range(lf)
+                    ])
         
         self.norm1 = nn.ModuleList([
-            nn.LayerNorm(normalized_shape=ltoken_dim) for _ in range(lf)
-        ])
+                        nn.LayerNorm(normalized_shape=ltoken_dim) 
+                        for _ in range(lf)
+                    ])
         self.norm2 = nn.ModuleList([
-            nn.LayerNorm(normalized_shape=ltoken_dim) for _ in range(lf)
-        ])
+                        nn.LayerNorm(normalized_shape=ltoken_dim) 
+                        for _ in range(lf)
+                    ])
 
     def forward(self, x):
         """
@@ -120,9 +121,10 @@ class SparseTransformerBlock(nn.Module):
 
 class SparseSwin(nn.Module):
     """Some Information about SparseSwin"""
-    def __init__(self, swin_type, num_classes, c_dim_list, hw_size_list, ltoken_num, ltoken_dims: list, num_heads: list, 
-                    qkv_bias=False, hidden_features=4., lf=4, attn_drop_prob=0.0, 
-                    lin_drop_prob=0.0, freeze_12=True, device='cuda'):
+    def __init__(self, swin_type, num_classes, c_dim_3rd, hw_size_3rd, 
+                    ltoken_num, ltoken_dims, num_heads, qkv_bias=False, 
+                    hidden_features=4., lf=4, attn_drop_prob=0.0, 
+                    lin_drop_prob=0.0, freeze_12=False, device='cuda'):
         super(SparseSwin, self).__init__()
         swin_type = swin_type.lower()
         if swin_type == 'tiny':
@@ -135,11 +137,11 @@ class SparseSwin(nn.Module):
             return None
         
         self.step4 = SparseTransformerBlock(
-                        c_dim=c_dim_list[-2], 
-                        hw_size=hw_size_list[-2],
+                        c_dim=c_dim_3rd, 
+                        hw_size=hw_size_3rd,
                         ltoken_num=ltoken_num, 
-                        ltoken_dim=ltoken_dims[0], 
-                        num_heads=num_heads[0], 
+                        ltoken_dim=ltoken_dims, 
+                        num_heads=num_heads, 
                         qkv_bias=qkv_bias,
                         hidden_features=hidden_features, 
                         lf=lf, 
@@ -147,8 +149,8 @@ class SparseSwin(nn.Module):
                         lin_drop_prob=lin_drop_prob,
                         device=device)
         
-        self.norm = nn.LayerNorm(ltoken_dims[0])
-        self.fc_out = nn.Linear(in_features=ltoken_dims[0], out_features=num_classes)
+        self.norm = nn.LayerNorm(ltoken_dims)
+        self.fc_out = nn.Linear(in_features=ltoken_dims, out_features=num_classes)
         
     def forward(self, x):
         swin_out = self.swin_model(x)

@@ -1,1 +1,3 @@
 This folder contains ImageNet100, CIFAR10, and CIFAR100 datasets
+CIFAR10 & CIFAR100: download from torchvision
+ImageNet100: https://www.kaggle.com/datasets/ambityga/imagenet100/data

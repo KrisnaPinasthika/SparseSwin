@@ -1,14 +1,11 @@
 import torch
-import torch.nn as nn
-from torch.utils.data import DataLoader
 import torchvision.transforms as transforms 
 from torchvision import datasets
 import numpy as np 
-import cv2
-import os
-import json
-from traintest import train, test
+from traintest import train
 import build_model as build
+
+torch.random.manual_seed(1)
 
 # Dataset Config -------------------------------------------
 mean = np.array([0.485, 0.456, 0.406])
@@ -23,7 +20,7 @@ data_transform = {
                 ]), 
         'val': transforms.Compose([
                     transforms.ToTensor(), 
-                    transforms.Resize((224, 224)),
+                    transforms.Resize((224, 224), antialias=None),
                     transforms.Normalize(mean, std)
                 ])
     }
@@ -53,7 +50,7 @@ val_dataset = datasets.CIFAR10(
 #                 transform=data_transform['val'], 
 #                 download=status)
 
-batch_size = 128
+batch_size = 12
 train_loader = torch.utils.data.DataLoader(
                 train_dataset, 
                 batch_size=batch_size, 
@@ -73,32 +70,41 @@ if __name__ == '__main__':
     dataset = 'cifar10'
     swin_type = 'tiny'
     reg_type, reg_lambda = 'l1', 1e-5
-    version = f'' # [TODO] cek versi
     device = torch.device('cuda')
-    epochs = 100
+    epochs = 1
     show_per = 200
+    ltoken_num, ltoken_dims = 49, 256
+    lf = 2
     
-    # NewGen tiny
     model = build.buildSparseSwin(
+        image_resolution=224,
         swin_type=swin_type, 
         num_classes=10, 
-        ltoken_num=49, 
-        ltoken_dims=[512], 
-        num_heads=[16], 
+        ltoken_num=ltoken_num, 
+        ltoken_dims=ltoken_dims, 
+        num_heads=16, 
         qkv_bias=True,
-        lf=2, 
+        lf=lf, 
         attn_drop_prob=.0, 
         lin_drop_prob=.0, 
         freeze_12=False,
         device=device)
     
     optimizer = torch.optim.AdamW(model.parameters(), lr=5e-5, weight_decay=0.01)
-    
-    # checkpoint = torch.load(r'./TrainingState/cifar100/SparseSwinNewGen_randomcrop_20')
-    # model.load_state_dict(checkpoint['model_state_dict'])
-    # optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-    
     criterion = torch.nn.CrossEntropyLoss()
     
-    train(train_loader, swin_type, version, dataset, epochs, model, optimizer, 
-              criterion, device, show_per=show_per, reg_type=reg_type, reg_lambda=reg_lambda, validation=val_loader)
+    train(
+        train_loader, 
+        swin_type, 
+        dataset, 
+        epochs, 
+        model, 
+        lf, 
+        ltoken_num,
+        optimizer, 
+        criterion, 
+        device, 
+        show_per=show_per,
+        reg_type=reg_type, 
+        reg_lambda=reg_lambda, 
+        validation=val_loader)

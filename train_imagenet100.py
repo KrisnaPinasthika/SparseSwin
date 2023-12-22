@@ -13,7 +13,7 @@ from traintest import train, test
 
 torch.random.manual_seed(1)
 
-# [TODO] Data Config
+# TODO: Data Config
 class Imagenet100(torch.utils.data.Dataset):
     """Some Information about Imagenet100"""
     def __init__(self, df, class2idx, transform):
@@ -37,19 +37,22 @@ class Imagenet100(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.df)
 
-
-
 def get_path(list_paths):
     filelist = []
 
     for root_path in list_paths:
         for dir in os.listdir(root_path):
             dir_path = os.path.join(root_path, dir)
+            count = 0
             for data in os.listdir(dir_path):
                 if data.lower().split('.')[-1] != 'jpeg': 
                     continue
                 data_path = os.path.join(dir_path, data)
                 filelist.append([data_path, dir])
+                count += 1
+                
+                if count == 3:
+                    break
 
     df = pd.DataFrame(filelist, columns=['image_path', 'label'])
     class2idx = {label:i for i, label in enumerate(sorted(set(df['label'])))}
@@ -67,7 +70,7 @@ def load(df, class2idx, batch_size, type_transforms):
     else:
         transform_new=transforms.Compose([
             transforms.ToTensor(),
-            transforms.Resize(256),
+            transforms.Resize(256, antialias=None),
             transforms.CenterCrop(224),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
         ])
@@ -93,40 +96,50 @@ test_paths = [r'../datasets/imagenet100/val.X/']
 train_df, train_class2idx = get_path(train_paths)
 test_df, test_class2idx = get_path(test_paths)
 
-batch_size = 128
+# Todo: Check the label
+with open('../datasets/imagenet100/Labels.json', 'r') as f:
+    data = json.load(f)
+
+class2idx = {j:i for i, j in enumerate(sorted(data.keys()))}
+
+if (train_class2idx != class2idx):
+    print('Something wrong with class label, please check it immediately')
+
+
+
+batch_size = 22
 train_loader = load(train_df, train_class2idx, batch_size=batch_size, type_transforms='train')
 val_loader = load(test_df, test_class2idx, batch_size=batch_size, type_transforms='test')
 
-# [TODO] Model Config
-# Model ----------------------------------------------------
+# TODO: Model Config
 if __name__ == "__main__":
+    device = torch.device('cuda')
     dataset = 'imagenet100'
     swin_type = 'tiny'
-    reg_type, reg_lambda = 'l2', 0.00001 #0.01
-    swin_stage = 'None' # stage1, stage2, stag1stage2
-    version = f'NewGenTiny_FIXBUG_{reg_type}_{reg_lambda}' # [TODO] cek versi
-    device = torch.device('cuda')
-    epochs = 100
+    reg_type, reg_lambda = 'l2', 1e-5
+    epochs = 1
     show_per = 500
+    image_resolution = 224
+    ltoken_num, ltoken_dims = 49, 256
+    lf = 2
     
     model = build.buildSparseSwin(
-        swin_type=swin_type, 
-        num_classes=100, 
-        ltoken_num=49, 
-        ltoken_dims=[512], 
-        num_heads=[16], 
-        qkv_bias=True,
-        lf=2, 
-        attn_drop_prob=.0, 
-        lin_drop_prob=.0, 
-        device=device)
+            image_resolution=image_resolution,
+            swin_type=swin_type, 
+            num_classes=100, 
+            ltoken_num=ltoken_num, 
+            ltoken_dims=ltoken_dims, 
+            num_heads=16, 
+            qkv_bias=True,
+            lf=lf, 
+            attn_drop_prob=.0, 
+            lin_drop_prob=.0, 
+            freeze_12=True,
+            device=device
+        )
     
     optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
     criterion = torch.nn.CrossEntropyLoss()
-
-    # [TODO] Training
-    train(train_loader, swin_type, version, dataset, epochs, model, optimizer, 
-                criterion, device, show_per=show_per, swin_stage=swin_stage, 
-                reg_type=reg_type, reg_lambda=reg_lambda, validation=val_loader)
-    # [TODO] Testing
-    test(val_loader, swin_type, model, criterion, device)
+    
+    train(train_loader, swin_type, dataset, epochs, model, lf, ltoken_num, optimizer, criterion, device, 
+            show_per=show_per,reg_type=reg_type, reg_lambda=reg_lambda, validation=val_loader)
