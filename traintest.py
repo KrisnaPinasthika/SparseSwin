@@ -3,16 +3,16 @@ import os
 import numpy as np 
 import pandas as pd
 
-def train(train_loader, swin_type, dataset, epochs, model, lf, ltoken_num,
-            optimizer, criterion, device, show_per,  
-            reg_type=None, reg_lambda=0., validation=None):
+def train(train_loader, swin_type, dataset, epochs, model, lf, token_num,
+                optimizer, criterion, device, show_per,  
+                reg_type=None, reg_lambda=0., validation=None):
     model.train()
     total_batch = train_loader.__len__()
     train_test_hist = []
     best_test_acc = -99
     
-    specific_dir = f'./SavedModel/{dataset}/SparseSwin_reg_{reg_type}_lbd_{reg_lambda}_lf_{lf}_{ltoken_num}'
-    if f'SparseSwin_reg_{reg_type}_lbd_{reg_lambda}_lf_{lf}_{ltoken_num}' not in os.listdir(f'./SavedModel/{dataset}/'): 
+    specific_dir = f'./SavedModel/{dataset}/SparseSwin_reg_{reg_type}_lbd_{reg_lambda}_lf_{lf}_{token_num}'
+    if f'SparseSwin_reg_{reg_type}_lbd_{reg_lambda}_lf_{lf}_{token_num}' not in os.listdir(f'./SavedModel/{dataset}/'): 
         os.mkdir(specific_dir)
     
     print(f"[TRAIN] Total : {total_batch} | type : {swin_type} | Regularization : {reg_type} with lamda : {reg_lambda}")
@@ -28,7 +28,10 @@ def train(train_loader, swin_type, dataset, epochs, model, lf, ltoken_num,
             optimizer.zero_grad()
 
             # forward + backward + optimize
-            outputs, attn_weights = model(inputs)
+            if swin_type.lower() == "swin_transformer_tiny" or swin_type.lower() == "swin_transformer_small" or swin_type.lower() == "swin_transformer_base":
+                outputs = model(inputs)
+            else:
+                outputs, attn_weights = model(inputs)
             
             reg = 0
             if reg_type == 'l1':                
@@ -68,7 +71,6 @@ def train(train_loader, swin_type, dataset, epochs, model, lf, ltoken_num,
         if test_acc >= best_test_acc:
             best_test_acc = test_acc
             torch.save(model.state_dict(), f'{specific_dir}/model_{epoch+1}.pt')
-            print(f"--> Best Model saved successfully | Acc : {best_test_acc:.4f}")
     
     train_test_hist = np.array(train_test_hist)
     df = pd.DataFrame()
@@ -77,6 +79,16 @@ def train(train_loader, swin_type, dataset, epochs, model, lf, ltoken_num,
     df['test_loss'] = train_test_hist[:, 2]
     df['test_acc'] = train_test_hist[:, 3]
     df.to_csv(f'{specific_dir}/hist.csv', index=None)
+    
+    # save state for last epoch
+    # torch.save({'epoch': epoch,
+    #                     'model_state_dict': model.state_dict(),
+    #                     'optimizer_state_dict': optimizer.state_dict(),
+    #                     'loss': loss}, 
+    #                     f'./TrainingState/{dataset}/SparseSwin_{reg_type}_{reg_lambda}_lf_{lf}_{epoch+1}')
+    # print('Finished Training, saved training state :D')
+    # print("Train Loss, Train Acc, Test Loss, Test Acc")
+    # print(train_test_hist)
 
 def test(val_loader, swin_type, model, criterion, device):
     model.eval()
@@ -91,7 +103,11 @@ def test(val_loader, swin_type, model, criterion, device):
             inputs, labels = inputs.to(device), labels.to(device)
 
             # forward 
-            outputs, attn_weights = model(inputs)
+            if swin_type.lower() == "swin_transformer_tiny" or swin_type.lower() == "swin_transformer_small" or swin_type.lower() == "swin_transformer_base":
+                outputs = model(inputs)
+            else:
+                outputs, attn_weights = model(inputs)
+                
             loss = criterion(outputs, labels)
 
             running_loss += loss.item()
@@ -99,6 +115,7 @@ def test(val_loader, swin_type, model, criterion, device):
             n_correct_per_batch = torch.sum(torch.argmax(outputs, dim=1) == labels)
             n_correct += n_correct_per_batch
             n_sample += labels.shape[0]
+            acc = n_correct / n_sample
 
     print(f'[Model : {swin_type}] Loss: {(running_loss / total_batch):.4f} Acc : {(n_correct / n_sample):.4f}')
     print()
