@@ -32,12 +32,12 @@ class SparseToken(nn.Module):
         """
         x = x.permute(0, 3, 1, 2) # B, C, H, W
         
-        sparse_token = self.convert(x)                        # B, ltoken_dim, H, W
-        sparse_token = sparse_token.flatten(start_dim=2)      # B, ltoken_dim, H*W
+        sparse_token_dim_converter = self.convert(x)                        # B, ltoken_dim, H, W
+        sparse_token = sparse_token_dim_converter.flatten(start_dim=2)      # B, ltoken_dim, H*W
         sparse_token = self.lin_t(sparse_token)               # B, ltoken_dim, ltoken_num
         sparse_token = sparse_token.transpose(1, 2)           # B, ltoken_num, ltoken_dim
         
-        return sparse_token
+        return sparse_token, sparse_token_dim_converter
 
 class MLP(nn.Module):
     """Some Information about MLP"""
@@ -110,14 +110,15 @@ class SparseTransformerBlock(nn.Module):
             out = (batch_size, n_tokes, embed_dim)
         """
         attn_weights = []
-        sparse_token = self.convert_token(x)
+        sparse_token, sparse_token_dim_converter = self.convert_token(x)
+        sparse_token = sparse_token.clone()
         for i in range(self.lf):
             attn_out, attn_weight = self.mha[i](self.norm1[i](sparse_token))
             attn_weights.append(attn_weight)
             sparse_token = sparse_token + attn_out
             sparse_token = sparse_token + self.mlp[i](self.norm2[i](sparse_token))
         
-        return sparse_token, attn_weights
+        return sparse_token, attn_weights, sparse_token_dim_converter
 
 class SparseSwin(nn.Module):
     """Some Information about SparseSwin"""
@@ -154,11 +155,11 @@ class SparseSwin(nn.Module):
         
     def forward(self, x):
         swin_out = self.swin_model(x)
-        step4, attn_weights = self.step4(swin_out)            # B, ltoken_num, ltoken_dim[0]
+        step4, attn_weights, sparse_token_dim_converter = self.step4(swin_out)            # B, ltoken_num, ltoken_dim[0]
         out = self.norm(step4)
         out = out.transpose(1, 2)                             # B, ltoken_dim[1], ltoken_num
         out = out.mean(dim=-1)                                # B, ltoken_dim[1]
         
         out = self.fc_out(out)
         
-        return out, attn_weights
+        return out, attn_weights, sparse_token_dim_converter

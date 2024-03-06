@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import numpy as np 
 
+    
 class MultiheadAttention(nn.Module):
     """Some Information about MultiheadAttention"""
     def __init__(self, embed_dim, num_heads, qkv_bias=False,

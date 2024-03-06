@@ -10,6 +10,7 @@ import json
 import matplotlib.pyplot as plt
 import build_model as build
 from traintest import train, test
+from torchvision.models.swin_transformer import swin_t
 
 torch.random.manual_seed(1)
 
