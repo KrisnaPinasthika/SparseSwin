@@ -1,4 +1,6 @@
 /datasets/*
-/SavedModel/*
+/SavedModel/imagenet100/tmp/*
+/SavedModel/cifar10/tmp/*
+/SavedModel/cifar100/tmp/*
 /tes.py
 /tes.ipynb
