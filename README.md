@@ -21,7 +21,7 @@ optimize the use of the transformer and improve its performance.
 
 ## Information
 
-<The>SparseSwin is an architecture designed for addressing image classification cases, but it is not limited to <a href="SparseSwinDet/"> object detection </a> and <a href="SparseSwinDense/"> image segmentation scenarios </a>. SparseSwin is constructed by employing the Swin Transformer as the primary architecture, implementing our proposed Sparse Transformer (SparTa) Block in the fourth stage.The SparTa Block possesses computational complexity unrelated to the size of the input image, allowing it to efficiently handle large input image sizes.</p>
+<The>SparseSwin is an architecture designed for addressing image classification cases, but it is not limited to <a href="SparseSwinDet/"> object detection </a> and <a href="SparseSwinDense/"> image segmentation</a> scenarios. SparseSwin is constructed by employing the Swin Transformer as the primary architecture, implementing our proposed Sparse Transformer (SparTa) Block in the fourth stage.The SparTa Block possesses computational complexity unrelated to the size of the input image, allowing it to efficiently handle large input image sizes.</p>
 
 <p>In detail, the architecture used in this research is illustrated in Figures 1 and 2.</p>
 <figure>
