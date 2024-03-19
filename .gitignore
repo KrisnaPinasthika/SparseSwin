@@ -4,3 +4,4 @@
 /SavedModel/cifar100/tmp/*
 /tes.py
 /tes.ipynb
+/SparseSwinDet/trained_models/*
